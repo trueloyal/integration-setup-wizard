@@ -1,0 +1,1453 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>TrueLoyal Integration Wizard</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    /* Print styles */
+    @media print {
+      .no-print { display: none !important; }
+      .print-expand { display: block !important; }
+      .step-card { break-inside: avoid; }
+      body { font-size: 12px; }
+      .print-full-width { max-width: 100% !important; }
+    }
+
+    /* Smooth transitions */
+    .accordion-body {
+      overflow: hidden;
+      transition: max-height 0.25s ease, opacity 0.2s ease;
+    }
+    .accordion-body.closed {
+      max-height: 0;
+      opacity: 0;
+    }
+    .accordion-body.open {
+      max-height: 2000px;
+      opacity: 1;
+    }
+
+    /* Code block scroll */
+    pre {
+      white-space: pre;
+      overflow-x: auto;
+    }
+
+    /* Scroll hint gradient */
+    .scroll-fade::after {
+      content: '';
+      position: absolute;
+      right: 0; top: 0; bottom: 0;
+      width: 48px;
+      background: linear-gradient(to right, transparent, white);
+      pointer-events: none;
+    }
+
+    /* Step complete animation */
+    @keyframes checkPop {
+      0% { transform: scale(0.5); opacity: 0; }
+      70% { transform: scale(1.15); }
+      100% { transform: scale(1); opacity: 1; }
+    }
+    .check-pop { animation: checkPop 0.3s ease forwards; }
+  </style>
+</head>
+<body class="bg-gray-50 min-h-screen">
+
+<div id="app"></div>
+
+<script>
+// ─── LOGO ──────────────────────────────────────────────────────────────────
+const LOGO_B64 = "iVBORw0KGgoAAAANSUhEUgAAAegAAAD9CAIAAAD4XnPHAAAAA3NCSVQICAjb4U/gAAAfCElEQVR4nO3deVxUVf8H8HPvDDAoA4gL5oobIIuK4lIqCu6Kik9PUpn5SytRn9L6lfbLnvbcSrM0Tc3AfdfU3BfcFZTcUhDZ1FyRfR1g5v7+GCAa4J47671XPu9Xf8TMuXeOI37mzrnfcw7T2mcgAQAA+WDF7gAAABgHwQ0AIDMIbgAAmUFwAwDIDIIbAEBmENwAADKD4AYAkBkENwCAzCC4AQBkBsENACAzCG4AAJlBcAMAyAyCGwBAZpTCm/bzbv9G0Assw1ivNwDm0JSVzd17KOXJU7E7AmBdRgT3qVvJAa1bRgwIQnaDZHVwbzxx1fqUdGQ3PMsUro3bCm8dk3JHybLd2rRikN0gSWpHVYiP56mE21mFRWL3BcBajAtuQkhMSqqSVQQiu0Gq1I6qEF/vkwm3s5Hd8IwyOrgJITHJqQpkN0iYWqUa6Ot9Ij4R2Q3PJFOCmxByITnVDtkNEqZWqQb6Ibvh2WRicBNkN0iePrsxZgLPHtODmxByIRnj3SBpapVqoI837lXCM8as4CYV492oMwHJUjuqQny8Tt1KyiooFLsvAJZhbnATQmKSU5XIbpCw8hpBZDc8KywQ3KSiRhDZDZJVUd+dlFWI7AbZs0xwE0JiUtIwNwekDNfd8MywWHATZDdIHq674dlgyeAmGDMByVM7qgb4eKFGEGTNwsFNKu5VokYQJEvtqJ9XiewGubJ8cJPy+m42sE1rZDdIU8W8SmQ3yJJVgpsQciE5DdfdIGXl8yqR3SBD1gpugutukDx9dmNeJciOFYOblF93s92Q3SBVapUqxMcbdSYgL9YNbkJIDLIbpE1fI3ga9d0gH1YPbvJ3fTeyGyQK2Q3yYovgJuV7njHIbpAszM0BGbFRcBNkN0geshvkwnbBTZDdIHmYVwmyYNPgJhX3KlEjCJKln1eJ+m6QMlsHN6moEUR2g2SpVapBft7R2K8SpEqE4CaYVwmS56RSDfLzPoExE5AkcYKbYF4lSJ6TSjXQF3NzQIpEC26CeZUgeWoV6rtBisQMblJ+rxLrd4N0Yd8ckCCRg5uUr9+N624guszBzwT2uf3SHKVCcRuJ9rLuwS6vWTyuU1jj+CXz6b1RnLXhQDQ8nTPLi3KTkNpYhBmgQ6sfGhGBqyxwEAJGzb6xXz1n9dQT+3mOSXe+oq3e9lPalq5OJaVXR+VuYKK36l3y7r3LN5GbNrx2RAAOkON+pYAAAAABJRU5ErkJggg==";
+
+// ─── SVG LOGOS ─────────────────────────────────────────────────────────────
+const LOGOS = {
+  shopify: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="#7AB55C"><path d="M15.337 23.979l7.216-1.561s-2.604-17.613-2.625-17.73c-.018-.116-.114-.192-.211-.192s-1.929-.136-1.929-.136-1.275-1.274-1.439-1.411c-.045-.037-.075-.057-.121-.074l-.914 21.104h.023zM11.71 11.305s-.81-.424-1.774-.424c-1.447 0-1.504.906-1.504 1.141 0 1.232 3.24 1.715 3.24 4.629 0 2.295-1.44 3.76-3.406 3.76-2.354 0-3.54-1.465-3.54-1.465l.646-2.086s1.245 1.066 2.28 1.066c.675 0 .975-.545.975-.932 0-1.619-2.654-1.694-2.654-4.359-.034-2.237 1.571-4.416 4.827-4.416 1.257 0 1.875.361 1.875.361l-.945 2.715-.02.01zM11.17.83c.136 0 .271.038.405.135-.984.465-2.064 1.639-2.508 3.992-.656.213-1.293.405-1.889.578C7.697 3.75 8.951.84 11.17.84V.83zm1.235 2.949v.135c-.754.232-1.583.484-2.394.736.466-1.777 1.333-2.645 2.085-2.971.193.501.309 1.176.309 2.1zm.539-2.234c.694.074 1.141.867 1.429 1.755-.349.114-.735.231-1.158.366v-.252c0-.752-.096-1.371-.271-1.871v.002zm2.992 1.289c-.02 0-.06.021-.078.021s-.289.075-.714.21c-.423-1.233-1.176-2.37-2.508-2.37h-.115C12.135.209 11.669 0 11.265 0 8.159 0 6.675 3.877 6.21 5.846c-1.194.365-2.063.636-2.16.674-.675.213-.694.232-.772.87-.075.462-1.83 14.063-1.83 14.063L15.009 24l.927-21.166z"/></svg>`,
+  vtex: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="#ED125F"><path d="M22.2027 1.7925H4.2812c-1.3897 0-2.2795 1.4698-1.6293 2.6917l1.7927 3.3773H1.1947a1.2 1.2 0 0 0-.5873.1537 1.1924 1.1924 0 0 0-.4356.421 1.1847 1.1847 0 0 0-.0342 1.1683l5.766 10.858c.1017.191.2537.3507.4399.4622a1.1996 1.1996 0 0 0 1.2326 0 1.1913 1.1913 0 0 0 .4398-.4623l1.566-2.933 1.9647 3.7006c.6914 1.3016 2.5645 1.304 3.2584.0038L23.7878 4.416c.635-1.1895-.2314-2.6235-1.5851-2.6235ZM14.1524 8.978l-3.8733 7.2533a.7932.7932 0 0 1-.2927.3074.7986.7986 0 0 1-.82 0 .7933.7933 0 0 1-.2927-.3074L5.0378 9.0086a.7883.7883 0 0 1 .0208-.7776.7933.7933 0 0 1 .2891-.281.7985.7985 0 0 1 .3906-.1033h7.7307a.7769.7769 0 0 1 .381.0998.7717.7717 0 0 1 .2823.2736.7672.7672 0 0 1 .02.758z"/></svg>`,
+  bigcommerce: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="#121118"><path d="M12.645 13.663h3.027c.861 0 1.406-.474 1.406-1.235 0-.717-.545-1.234-1.406-1.234h-3.027c-.1 0-.187.086-.187.172v2.125c.015.1.086.172.187.172zm0 4.896h3.128c.961 0 1.535-.488 1.535-1.35 0-.746-.545-1.35-1.535-1.35h-3.128c-.1 0-.187.087-.187.173v2.34c.015.115.086.187.187.187zM23.72.053l-8.953 8.93h1.464c2.281 0 3.63 1.435 3.63 3 0 1.235-.832 2.14-1.722 2.541-.143.058-.143.259.014.316 1.033.402 1.765 1.48 1.765 2.742 0 1.78-1.19 3.202-3.5 3.202h-6.342c-.1 0-.187-.086-.187-.172V13.85L.062 23.64c-.13.13-.043.359.143.359h23.631a.16.16 0 0 0 .158-.158V.182c.043-.158-.158-.244-.273-.13z"/></svg>`,
+  woocommerce: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="#96588A"><path d="M.754 9.58a.754.754 0 00-.754.758v2.525c0 .42.339.758.758.758h3.135l1.431.799-.326-.799h2.373a.757.757 0 00.758-.758v-2.525a.757.757 0 00-.758-.758H.754zm2.709.445h.03c.065.001.124.023.179.067a.26.26 0 01.103.19.29.29 0 01-.033.16c-.13.239-.236.64-.322 1.199-.083.541-.114.965-.094 1.267a.392.392 0 01-.039.219.213.213 0 01-.176.12c-.086.006-.177-.034-.263-.124-.31-.316-.555-.788-.735-1.416-.216.425-.375.744-.478.957-.196.376-.363.568-.502.578-.09.007-.166-.069-.233-.228-.17-.436-.352-1.277-.548-2.524a.297.297 0 01.054-.222c.047-.064.116-.095.21-.102.169-.013.265.065.288.238.103.695.217 1.284.336 1.766l.727-1.387c.066-.126.15-.192.25-.199.146-.01.237.083.273.28.083.441.188.817.315 1.136.086-.844.233-1.453.44-1.828a.255.255 0 01.218-.147zm1.293.36c.056 0 .116.006.18.02.232.05.411.177.53.386.107.18.161.395.161.654 0 .343-.087.654-.26.94-.2.332-.459.5-.781.5a.88.88 0 01-.18-.022.763.763 0 01-.531-.384 1.287 1.287 0 01-.158-.659c0-.342.085-.655.258-.937.202-.333.462-.498.78-.498zm2.084 0c.056 0 .116.006.18.02.236.05.411.177.53.386.107.18.16.395.16.654 0 .343-.086.654-.259.94-.2.332-.459.5-.781.5a.88.88 0 01-.18-.022.763.763 0 01-.531-.384 1.287 1.287 0 01-.16-.659c0-.342.087-.655.26-.937.202-.333.462-.498.78-.498zm4.437.047c-.305 0-.546.102-.718.304-.173.203-.256.49-.256.856 0 .395.086.697.256.906.17.21.418.316.744.316.315 0 .559-.107.728-.316.17-.21.256-.504.256-.883s-.087-.673-.26-.879c-.176-.202-.424-.304-.75-.304zm-1.466.002a1.13 1.13 0 00-.84.326c-.223.22-.332.499-.332.838 0 .362.108.658.328.88.22.223.505.336.861.336.103 0 .22-.016.346-.052v-.54c-.117.034-.216.051-.303.051a.545.545 0 01-.422-.177c-.106-.12-.16-.278-.16-.48 0-.19.053-.348.156-.468a.498.498 0 01.397-.181c.103 0 .212.015.332.049v-.537a1.394 1.394 0 00-.363-.045zm12.414 0a1.135 1.135 0 00-.84.326c-.223.22-.332.499-.332.838 0 .362.108.658.328.88.22.223.506.336.861.336.103 0 .22-.016.346-.052v-.54c-.116.034-.216.051-.303.051a.545.545 0 01-.422-.177c-.106-.12-.16-.278-.16-.48 0-.19.053-.348.156-.468a.498.498 0 01.397-.181c.103 0 .212.015.332.049v-.537a1.394 1.394 0 00-.363-.045zm-9.598.06l-.29 2.264h.579l.156-1.559.395 1.559h.412l.379-1.555.164 1.555h.603l-.304-2.264h-.791l-.12.508c-.03.13-.06.264-.087.4l-.067.352a29.97 29.97 0 00-.258-1.26h-.771zm2.768 0l-.29 2.264h.579l.156-1.559.396 1.559h.412l.375-1.555.165 1.555h.603l-.305-2.264h-.789l-.119.508c-.03.13-.06.264-.086.4l-.066.352c-.063-.352-.15-.771-.26-1.26h-.771zm3.988 0v2.264h.611v-1.031h.012l.494 1.03h.645l-.489-1.019a.61.61 0 00.37-.552.598.598 0 00-.25-.506c-.167-.123-.394-.186-.68-.186h-.713zm3.377 0v2.264H24v-.483h-.63v-.414h.54v-.468h-.54v-.416h.626v-.483H22.76zm-4.793.004v2.264h1.24v-.483h-.627v-.416h.541v-.468h-.54v-.415h.622v-.482h-1.236zm2.025.432c.146.003.25.025.313.072.063.046.091.12.091.227 0 .156-.135.236-.404.24v-.54zm-15.22.011c-.104 0-.205.069-.301.211a1.078 1.078 0 00-.2.639c0 .096.02.2.06.303.049.13.117.198.196.215.083.016.173-.02.27-.106.123-.11.205-.273.252-.492.016-.077.023-.16.023-.246 0-.097-.02-.2-.06-.303-.05-.13-.116-.198-.196-.215a.246.246 0 00-.045-.006zm2.083 0c-.103 0-.204.069-.3.211a1.078 1.078 0 00-.2.639c0 .096.02.2.06.303.049.13.117.198.196.215.083.016.173-.02.27-.106.123-.11.205-.273.252-.492.013-.077.023-.16.023-.246 0-.097-.02-.2-.06-.303-.05-.13-.116-.198-.196-.215a.246.246 0 00-.045-.006zm4.428.006c.233 0 .354.218.354.66-.004.273-.038.46-.098.553a.293.293 0 01-.262.139.266.266 0 01-.242-.139c-.056-.093-.084-.28-.084-.562 0-.436.11-.65.332-.65Z"/></svg>`,
+  magento: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="#EE672F"><path d="M12 0L1.846 6v12L12 24l10.154-6V6L12 0zm0 2.308l7.846 4.615v9.154L12 20.692l-7.846-4.615V6.923L12 2.308zm-.923 3.461v10.846l1.846 1.077V8l2.769 1.615V18l1.846-1.077V7.385L12 5.769z"/></svg>`,
+  miva: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="#0071BC"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>`,
+  netsuite: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="#1A7AB8"><path d="M3 3h8v8H3zm0 10h8v8H3zM13 3h8v8h-8zm0 10h8v8h-8z"/></svg>`,
+  custom: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="#64748b"><path d="M12 15.5A3.5 3.5 0 018.5 12 3.5 3.5 0 0112 8.5a3.5 3.5 0 013.5 3.5 3.5 3.5 0 01-3.5 3.5m7.43-2.92c.04-.34.07-.68.07-1.08s-.03-.73-.07-1.08l2.32-1.82c.21-.16.27-.46.13-.7l-2.2-3.82c-.14-.24-.42-.32-.66-.24l-2.74 1.1c-.57-.44-1.18-.8-1.85-1.08L14.7 2.42c-.04-.26-.27-.42-.53-.42h-4.4c-.26 0-.49.16-.53.42l-.42 2.92c-.67.28-1.28.64-1.85 1.08l-2.74-1.1c-.24-.08-.52 0-.66.24l-2.2 3.82c-.14.24-.08.54.13.7l2.32 1.82c-.04.35-.07.7-.07 1.08s.03.73.07 1.08L2.51 15.4c-.21.16-.27.46-.13.7l2.2 3.82c.14.24.42.32.66.24l2.74-1.1c.57.44 1.18.8 1.85 1.08l.42 2.92c.04.26.27.42.53.42h4.4c.26 0 .49-.16.53-.42l.42-2.92c.67-.28 1.28-.64 1.85-1.08l2.74 1.1c.24.08.52 0 .66-.24l2.2-3.82c.14-.24.08-.54-.13-.7l-2.32-1.82z"/></svg>`,
+};
+
+// ─── PLATFORM DATA ─────────────────────────────────────────────────────────
+const PLATFORMS = [
+  {
+    id: "shopify",
+    name: "Shopify",
+    description: "Install via the Shopify App Store — native plugin",
+    logoBg: "bg-[#f0f8ee]",
+    pluginType: "native",
+    steps: [
+      {
+        id: 1,
+        title: "Find TrueLoyal in the Shopify App Store",
+        body: "Search for 'TrueLoyal Loyalty Rewards' in the Shopify App Store. Click Install to begin.",
+        image: "https://files.readme.io/84db2514963754768114bca24e91e57acbf88b9b479e43a72efb15aca2781c55-Shopify_App_Store.png",
+        action: { label: "Open Shopify App Store", href: "https://apps.shopify.com" },
+        tip: "Make sure you're logged into the correct Shopify store before installing.",
+      },
+      {
+        id: 2,
+        title: "Select your store and install",
+        body: "Select the store you want to connect TrueLoyal to, then click Install to authorize the app.",
+        image: "https://files.readme.io/a5b50ef37beb628dceb2bfccb99d5943f31ad31930861d4f69e4bf9b560bdd45-Shopify_Install.png",
+      },
+      {
+        id: 3,
+        title: "Complete the setup wizard",
+        body: "TrueLoyal will launch a setup wizard. Click through each screen and enter your store details when prompted.",
+        image: "https://files.readme.io/402821be5a55690ba679ba0769c8760a4482675eaaca0946642292ec7fe5df40-image.png",
+      },
+      {
+        id: 4,
+        title: "Enter your enterprise activation code",
+        body: "Enter the 8-digit enterprise activation code provided by your TrueLoyal onboarding manager.",
+        image: "https://files.readme.io/8f0c1c06aa8110a9a7fb10096917b17bd1775f7533b553e6c293e3e1bd99f81f-image.png",
+        tip: "Don't have your activation code? Contact your TrueLoyal onboarding manager.",
+      },
+      {
+        id: 5,
+        title: "Enable the app extension",
+        body: "Click the arrow button to enable the Shopify app extension, then click the 'Go to Shopify' link.",
+        image: "https://files.readme.io/ba3a158f6bbd9e462e1c7a5fbe9f29e5108f6e8ba368ec542cbe4cdde4e69090-WelcomeAboard.png",
+      },
+      {
+        id: 6,
+        title: "Turn on the Loyalty app extension in Shopify",
+        body: "In your Shopify theme editor, enable the 'Loyalty app extension' toggle and save your changes.",
+        image: "https://files.readme.io/115b95b1e4ed55d197a8bdd5605161617dea9dbe58995c0e8ec218e2497426e8-AppEmbedd.png",
+        tip: "Make sure to click Save after toggling — unsaved changes won't take effect.",
+      },
+      {
+        id: 7,
+        title: "Mark as complete and launch",
+        body: "Return to the TrueLoyal setup wizard and click 'Mark as complete'. Preview your site, then click Launch when ready.",
+        image: "https://files.readme.io/911255573c3c7031962069364f9cce4ea99ea34f3895556ee9a189f8acba9d15-MarkAsComplete.png",
+      },
+    ],
+    whatNext: [
+      {
+        title: "Set up your Activities",
+        body: "Before testing, make sure at least one earning activity is active — typically 'Made a Purchase'. Go to TrueLoyal Admin → Activities and confirm the activity is enabled and has a points rule configured.",
+        action: { label: "Open Activities", href: "https://app.trueloyal.com" },
+      },
+      {
+        title: "Set up your Rewards",
+        body: "Make sure at least one reward is active and available for redemption. Go to TrueLoyal Admin → Rewards and confirm a reward is published with a points cost set.",
+        action: { label: "Open Rewards", href: "https://app.trueloyal.com" },
+      },
+      {
+        title: "Place a test transaction",
+        body: "In Shopify, go to Settings → Payments and enable the Bogus Gateway for testing. Place a test order using a registered member account. Use the credit card number 1 to simulate a successful transaction.",
+        action: { label: "Shopify Bogus Gateway docs", href: "https://help.shopify.com/en/manual/checkout-settings/test-orders" },
+      },
+      {
+        title: "Confirm points were awarded",
+        body: "After the order is processed, go to TrueLoyal Admin → Activity and check that the transaction appears and points were awarded to the member. Allow up to 5 minutes for the first sync.",
+        action: { label: "Open Activity Log", href: "https://app.trueloyal.com" },
+      },
+      {
+        title: "Test redemption",
+        body: "Log into the storefront as the test member and open the loyalty dashboard. Verify the points balance is correct, then redeem a reward. Confirm the coupon code is issued and can be applied at checkout.",
+      },
+    ],
+  },
+  {
+    id: "vtex",
+    name: "VTEX",
+    description: "Configure via VTEX IO — native app",
+    logoBg: "bg-[#fff0f4]",
+    pluginType: "native",
+    steps: [
+      {
+        id: 1,
+        title: "Get the TrueLoyal Connector from the VTEX App Store",
+        body: "Go to apps.vtex.com, search for 'Zinrelo Connector', and click Get App. Enter your store URL when prompted.",
+        image: "https://files.readme.io/fd0e895-image.png",
+        action: { label: "Open VTEX App Store", href: "https://apps.vtex.com/zinrelopartnerus-zinrelo-connector/p" },
+      },
+      {
+        id: 2,
+        title: "Go to the install page",
+        body: "Click 'Go to Install Page' to authorize the app in your VTEX admin. Log in with your VTEX credentials if prompted.",
+        image: "https://files.readme.io/844523cc9bd04c59f2b84daa46b549fc551b203efe4d7a3c1309cb8d61f5aca6-8092f8d-image.png",
+      },
+      {
+        id: 3,
+        title: "Install via App Management",
+        body: "In VTEX admin, go to Apps → Extension Hub → App Management. Search for 'TrueLoyal Connector' and click Install.",
+        image: "https://files.readme.io/7ec8743da86904e974ea55ae1abf425e38e6d6bc49655a63679a6788d7a852c9-image.png",
+        tip: "You need Admin Super (Owner) permissions to install apps.",
+      },
+      {
+        id: 4,
+        title: "Generate VTEX Application Keys",
+        body: "Go to Account Settings → Application Keys → Manage Keys → Generate New. Label the key, assign the Owner (Admin Super) role, and click Generate. Save the key and token — you'll need them in the next step.",
+        image: "https://files.readme.io/96f2115-image.png",
+        tip: "Only Super Admins can generate application keys. The token is only shown once — copy it before closing.",
+      },
+      {
+        id: 5,
+        title: "Configure the TrueLoyal Connector settings",
+        body: "Open the TrueLoyal Connector app settings. Enable the loyalty rewards module, then enter your Partner ID, API Key, and the VTEX App Key and Token you just generated.",
+        image: "https://files.readme.io/03c2365fbfa6c7a21e3f43d0159472bc5ffda506f22a852d72cea2dc94a58bdc-ad512bb-image.png",
+        tip: "Your Partner ID and API Key are in TrueLoyal Admin → General → Settings.",
+      },
+      {
+        id: 6,
+        title: "Add the loyalty dashboard to your storefront",
+        body: "In your store's theme code, add the 'zinrelo-dashboard' block to the My Account page and any other pages where the dashboard should appear.",
+        image: "https://files.readme.io/868062c-image.png",
+        tip: "Adding the block to the My Account page is required. Product and cart page blocks are optional.",
+      },
+      {
+        id: 7,
+        title: "Set up in-cart redemption",
+        body: "Go to Promotions → Create Promotion → Regular. Enter the reward name, set the discount type to match your TrueLoyal reward type (Nominal = Fixed Amount), and add the reward ID from TrueLoyal admin. Under Marketing Tags, add the reward_id.",
+        image: "https://files.readme.io/30c56b6-image.png",
+        tip: "The reward ID in VTEX must exactly match the redemption ID in TrueLoyal admin.",
+      },
+    ],
+    whatNext: [
+      {
+        title: "Set up your Activities",
+        body: "Before testing, confirm at least one earning activity is active — typically 'Made a Purchase'. Go to TrueLoyal Admin → Activities and verify the activity is enabled with a points rule.",
+        action: { label: "Open Activities", href: "https://app.trueloyal.com" },
+      },
+      {
+        title: "Set up your Rewards",
+        body: "Confirm at least one reward is active and published with a points cost. Go to TrueLoyal Admin → Rewards.",
+        action: { label: "Open Rewards", href: "https://app.trueloyal.com" },
+      },
+      {
+        title: "Place a test order",
+        body: "Place a test order in your VTEX store using a registered member account. VTEX has a sandbox/test environment you can use to simulate transactions without real payments.",
+      },
+      {
+        title: "Confirm points were awarded",
+        body: "After the order is processed, go to TrueLoyal Admin → Activity and confirm the transaction appears and points were awarded. Allow up to 5 minutes for the first sync.",
+        action: { label: "Open Activity Log", href: "https://app.trueloyal.com" },
+      },
+      {
+        title: "Test redemption",
+        body: "Log in as the test member and open the loyalty dashboard. Verify the points balance, redeem a reward, and confirm the discount applies correctly at checkout via the VTEX promotion you configured.",
+      },
+    ],
+  },
+  {
+    id: "bigcommerce",
+    name: "BigCommerce",
+    description: "Install from the BigCommerce App Marketplace",
+    logoBg: "bg-[#f0f0f5]",
+    pluginType: "native",
+    steps: [
+      {
+        id: 1,
+        title: "Find TrueLoyal in the BigCommerce App Marketplace",
+        body: "In your BigCommerce admin, go to Apps → Marketplace and search for TrueLoyal. Click Get This App to begin installation.",
+        image: "https://files.readme.io/e75ef46c8024f8647891677ad7c54bc4ac3b8029ac263bcfb10a5b80f518d85d-BC_App_Store.png",
+        action: { label: "Open BigCommerce App Marketplace", href: "https://www.bigcommerce.com/apps/" },
+      },
+      {
+        id: 2,
+        title: "Complete installation and note your Partner ID",
+        body: "After installation, BigCommerce will generate a TrueLoyal Partner ID and redirect you to the TrueLoyal console. If you already have a TrueLoyal account, replace the auto-generated Partner ID with your actual Partner ID in both JavaScripts on the page.",
+        image: "https://files.readme.io/86ee51cf53f5b900f3b162c296f3e045d27c1016e356975f84b16b9b36828214-Afterinstall.png",
+        tip: "Your Partner ID is in TrueLoyal Admin → General → Settings. Use this — not the auto-generated one.",
+      },
+      {
+        id: 3,
+        title: "Complete the setup wizard",
+        body: "Follow the guided setup wizard to configure your loyalty program basics — program name, currency, earning rules, and branding.",
+        image: "https://files.readme.io/0305cb7b3ed426baf398b79475a1e3885d1616849ddd75dc54775fa4a7643e06-Wizard.png",
+      },
+      {
+        id: 4,
+        title: "Activate your program in TrueLoyal admin",
+        body: "Once the wizard is complete, go to TrueLoyal Admin and review your Activities and Rewards. When ready, activate the program.",
+        action: { label: "Open TrueLoyal Admin", href: "https://app.trueloyal.com" },
+      },
+      {
+        id: 5,
+        title: "Set up in-cart rewards (recommended)",
+        body: "To let members redeem points directly at checkout, go to Storefront → My Themes → Edit Theme Files. Find templates/components/cart/totals.html and paste the TrueLoyal in-cart code snippet. Contact your onboarding manager for the exact code block.",
+        image: "https://files.readme.io/2e4f8e3-1.png",
+        tip: "Note: when a member removes a coupon, points take up to 15 minutes to restore. Order returns do not automatically refund redeemed points.",
+      },
+    ],
+    whatNext: [
+      {
+        title: "Set up your Activities",
+        body: "Confirm at least one earning activity is active — typically 'Made a Purchase'. Go to TrueLoyal Admin → Activities and verify a points rule is configured.",
+        action: { label: "Open Activities", href: "https://app.trueloyal.com" },
+      },
+      {
+        title: "Set up your Rewards",
+        body: "Confirm at least one reward is published with a points cost. Go to TrueLoyal Admin → Rewards.",
+        action: { label: "Open Rewards", href: "https://app.trueloyal.com" },
+      },
+      {
+        title: "Place a test order",
+        body: "In BigCommerce admin, go to Settings → Payments and enable the Test Payment Gateway. Place a test order using a registered member account to trigger a points transaction.",
+      },
+      {
+        title: "Confirm points were awarded",
+        body: "After the order processes, go to TrueLoyal Admin → Activity and confirm the transaction appears and points were awarded. Allow up to 5 minutes for the first sync.",
+        action: { label: "Open Activity Log", href: "https://app.trueloyal.com" },
+      },
+      {
+        title: "Test redemption",
+        body: "Log in as the test member and open the loyalty dashboard. Verify the points balance, redeem a reward, and confirm the coupon applies at checkout.",
+      },
+    ],
+  },
+  {
+    id: "woocommerce",
+    name: "WooCommerce",
+    description: "Install via WordPress plugin",
+    logoBg: "bg-[#f7f0f7]",
+    pluginType: "native",
+    steps: [
+      {
+        id: 1,
+        title: "Install the TrueLoyal plugin from WordPress",
+        body: "In your WordPress admin, go to Plugins → Add New Plugin. Search for 'TrueLoyal' and click Install Now.",
+        image: "https://files.readme.io/c756ca9b3f7b99fc82f7a8faff9172ea85b9748e234ac64e416e9240e994dd3d-image.png",
+      },
+      {
+        id: 2,
+        title: "Activate the plugin",
+        body: "Once installed, click Activate. You should see TrueLoyal appear in your active plugins list.",
+        image: "https://files.readme.io/4df7e7d2d0b0c34dae448c69718105a21d7cce7dee1d8e2174d175a475e0b946-image.png",
+      },
+      {
+        id: 3,
+        title: "Open TrueLoyal settings and enter your credentials",
+        body: "Go to WooCommerce → Settings → TrueLoyal tab. Enable the integration, then enter your Partner ID, API Key, and API Key Identifier.",
+        image: "https://files.readme.io/5f7a23d1cda2d6ea5b16580100e394d7b8dc8725eeedfc7bdf8e0ae3149f3006-Untitled_design_1.png",
+        tip: "Your Partner ID and API Key are in TrueLoyal Admin → General → Settings. The API Key Identifier is the label you assigned when generating the key.",
+      },
+      {
+        id: 4,
+        title: "Enable points display on product pages",
+        body: "In the TrueLoyal settings tab, enable the reward points toggle for product pages. Customise the display text using the {{EARN_POINTS}} placeholder to show how many points a purchase earns.",
+        image: "https://files.readme.io/b5fcb9b-image.png",
+        tip: "Example: 'Earn {{EARN_POINTS}} points with this purchase.'",
+      },
+      {
+        id: 5,
+        title: "Enable cart page rewards",
+        body: "Enable the cart page rewards toggle. Customise the display text using {{AVAILABLE_POINTS}} to show the member's redeemable balance on the cart.",
+        image: "https://files.readme.io/2854f28-image.png",
+      },
+      {
+        id: 6,
+        title: "Configure webhooks",
+        body: "Go to WooCommerce → Settings → Advanced → Webhooks and click Add Webhook. Set status to Active, select the required order topics (order.created, order.status_processing, order.partially_refunded), enter the webhook delivery URL from TrueLoyal admin, and save.",
+        image: "https://files.readme.io/b3d05b1-image.png",
+        tip: "Contact your TrueLoyal onboarding manager for the webhook delivery URL specific to your store.",
+      },
+      {
+        id: 7,
+        title: "Set up reward coupons in WooCommerce",
+        body: "For each TrueLoyal reward, create a matching coupon in WooCommerce → Coupons → Add Coupon. Set the discount type (Fixed Cart, Percentage, or Free Shipping), limit usage to 1 per coupon and 1 per user, and make sure the coupon code matches exactly what's configured in TrueLoyal admin.",
+        image: "https://files.readme.io/8e76acb-image_1.png",
+        tip: "Coupon codes are case-sensitive — double-check they match on both sides exactly.",
+      },
+    ],
+    whatNext: [
+      {
+        title: "Set up your Activities",
+        body: "Confirm at least one earning activity is active — typically 'Made a Purchase'. Go to TrueLoyal Admin → Activities and verify a points rule is configured.",
+        action: { label: "Open Activities", href: "https://app.trueloyal.com" },
+      },
+      {
+        title: "Set up your Rewards",
+        body: "Confirm at least one reward is published and the coupon code matches the one you created in WooCommerce. Go to TrueLoyal Admin → Rewards.",
+        action: { label: "Open Rewards", href: "https://app.trueloyal.com" },
+      },
+      {
+        title: "Place a test order",
+        body: "In WooCommerce → Settings → Payments, enable the Cheque gateway for testing. Place a test order as a registered member account to trigger a points transaction.",
+      },
+      {
+        title: "Confirm points were awarded",
+        body: "After the order is placed, go to TrueLoyal Admin → Activity and confirm the transaction appears and points were awarded. Allow up to 5 minutes for the first sync.",
+        action: { label: "Open Activity Log", href: "https://app.trueloyal.com" },
+      },
+      {
+        title: "Test redemption",
+        body: "Log in as the test member, open the loyalty dashboard, redeem a reward, and confirm the generated coupon code applies correctly at WooCommerce checkout.",
+      },
+    ],
+  },
+  {
+    id: "magento",
+    name: "Magento / Adobe Commerce",
+    description: "Install via Composer or manual module upload",
+    logoBg: "bg-[#fff5f0]",
+    pluginType: "native",
+    steps: [
+      {
+        id: 1,
+        title: "Get the extension from Magento Marketplace",
+        body: "Visit the Magento Marketplace, find the TrueLoyal Loyalty Rewards extension, select edition Open Source (CE) and version 2.4, add to cart and complete checkout. Then click Install.",
+        image: "https://files.readme.io/b43faf3-image.png",
+        action: { label: "Open Magento Marketplace", href: "https://marketplace.magento.com" },
+        tip: "You'll need a Magento account to purchase and install extensions from the Marketplace.",
+      },
+      {
+        id: 2,
+        title: "Install via Composer",
+        body: "SSH into your Magento server and run the Composer require command to pull in the extension.",
+        codeBlocks: [
+          { label: "Install extension", value: "composer require TrueLoyal/extension" },
+        ],
+        tip: "Alternatively, download the ZIP from the TrueLoyal GitHub repo, create the directory app/code/TrueLoyal/LoyaltyRewards, and extract it there.",
+      },
+      {
+        id: 3,
+        title: "Enable the module and run setup",
+        body: "Enable the TrueLoyal module and run the Magento upgrade and cache commands to complete installation.",
+        codeBlocks: [
+          {
+            label: "CLI commands",
+            value: "php bin/magento module:enable TrueLoyal_LoyaltyRewards\nphp bin/magento setup:upgrade\nphp bin/magento cache:clean",
+          },
+        ],
+      },
+      {
+        id: 4,
+        title: "Navigate to TrueLoyal settings in admin",
+        body: "In Magento admin, go to Stores → Configuration → TrueLoyal Loyalty Rewards → TrueLoyal Settings.",
+        image: "https://files.readme.io/ff6765245509f1d8189d0806223c60cb7c3b97cef2380f95017fe63142d87ed5-Untitled_design_5.png",
+      },
+      {
+        id: 5,
+        title: "Enter your credentials and configure settings",
+        body: "Enter your Partner ID, API Key, and API Key Identifier. Configure reward events, product page points display, and any other settings for your store.",
+        image: "https://files.readme.io/54ce2b5bcc0dfeeb4156a82e273777bb18deb97be5fa8f485f07a4378f018f2a-image_9.png",
+        tip: "Your Partner ID and API Key are in TrueLoyal Admin → General → Settings.",
+      },
+      {
+        id: 6,
+        title: "Enable in-cart redemption",
+        body: "In the TrueLoyal settings, enable the in-cart functionality toggle. This lets members select and apply a reward directly from the cart page before checkout.",
+        image: "https://files.readme.io/147398d-image.png",
+      },
+      {
+        id: 7,
+        title: "Verify the frontend display",
+        body: "Visit a product page and your cart as a logged-in member to confirm the loyalty dashboard button, points display, and reward dropdown are all rendering correctly.",
+        image: "https://files.readme.io/0b11fb0-unnamed_3.png",
+      },
+    ],
+    whatNext: [
+      {
+        title: "Set up your Activities",
+        body: "Confirm at least one earning activity is active — typically 'Made a Purchase'. Go to TrueLoyal Admin → Activities and verify a points rule is configured.",
+        action: { label: "Open Activities", href: "https://app.trueloyal.com" },
+      },
+      {
+        title: "Set up your Rewards",
+        body: "Confirm at least one reward is published with a points cost. Go to TrueLoyal Admin → Rewards.",
+        action: { label: "Open Rewards", href: "https://app.trueloyal.com" },
+      },
+      {
+        title: "Place a test order",
+        body: "Place a test order in Magento using a registered customer account. Use a sandbox or test payment method to avoid real transactions.",
+      },
+      {
+        title: "Confirm points were awarded",
+        body: "After the order processes, go to TrueLoyal Admin → Activity and confirm the transaction appears and points were awarded. Allow up to 5 minutes for the first sync.",
+        action: { label: "Open Activity Log", href: "https://app.trueloyal.com" },
+      },
+      {
+        title: "Test redemption",
+        body: "Log in as the test member, open the loyalty dashboard, redeem a reward, and confirm the discount applies correctly in the Magento cart.",
+      },
+    ],
+  },
+  {
+    id: "miva",
+    name: "Miva",
+    description: "Module-based integration via Miva admin",
+    logoBg: "bg-[#f0f6ff]",
+    pluginType: "native",
+    steps: [
+      {
+        id: 1,
+        title: "Download and install the TrueLoyal module",
+        body: "Download the TrueLoyal module (zinrelo.mvc) from the GitHub repository. In Miva admin, go to Home → Modules, click Add Module, upload the file, and click Add. Then go to Utility Settings → Add/Remove Modules and click Install.",
+        image: "https://files.readme.io/6251cd42fd54a6d9170e4051562bfe2d9ae6fe4825c2509032bc213403b14d5d-1ea3d99343f9dd47b8d6b45f0477324d2b1a485585c0ed70ff59f22e71201778-image.png",
+        tip: "Contact your TrueLoyal onboarding manager for the download link to the latest zinrelo.mvc file.",
+      },
+      {
+        id: 2,
+        title: "Enable the integration and enter your credentials",
+        body: "Go to Settings → Utilities → More → TrueLoyal Settings. Enable the integration toggle, then enter your Partner ID, API Key, and API Key Identifier.",
+        image: "https://files.readme.io/864f398f5e639f9b0e489d72870694c828b317a41a29a294abdf484fe5953096-image.png",
+        tip: "Your Partner ID and API Key are in TrueLoyal Admin → General → Settings.",
+      },
+      {
+        id: 3,
+        title: "Configure product page points display",
+        body: "Set 'Enable Reward Points Text on Product Pages' to Yes. Enter your display text using the {{EARN_POINTS}} placeholder to show how many points a product earns.",
+        image: "https://files.readme.io/d2f62569cf0ea31963af28c4fd38786ab8e2f2de9ad5bbbdc34c9c90c1a7991b-image.png",
+        tip: "Example: 'Buy this and earn {{EARN_POINTS}} points.'",
+      },
+      {
+        id: 4,
+        title: "Enable in-cart redemption",
+        body: "Set 'In-cart redemption' to Yes and configure the cart text using the {{AVAILABLE_POINTS}} placeholder to show the member's redeemable balance.",
+        image: "https://files.readme.io/100fbcd0197cbf306b34e071868d27a1ba70abedd960c7edc5bf8e0cb3559320-image.png",
+      },
+      {
+        id: 5,
+        title: "Set up Order Workflow Authentication",
+        body: "Go to Settings → Utilities → More → Order Workflow Authentication Credentials. Click Add Authentication Credentials, set Description to 'TrueLoyal Authentication', select Basic Authentication, enter Username as 'TrueLoyal', and use your API Key as the password. Save.",
+        image: "https://files.readme.io/9a1e8403dbae1c0a9c052c317e4cd5e569658aabb522a8419ff437d673064596-image.png",
+        tip: "This step is required for order events (points awards and deductions) to fire correctly.",
+      },
+      {
+        id: 6,
+        title: "Generate and upload coupon codes",
+        body: "In Miva, go to Marketing → Add Price Group and create a Coupon Only price group for each reward type. Then generate coupon codes under that price group, export them to CSV, and upload them to TrueLoyal Admin → Rewards → Manage Codes.",
+        image: "https://files.readme.io/450b69dca8f423acc5cf79b7fc355acc241345eb068047ecdb10fa89909102f3-image.png",
+        tip: "Each reward in TrueLoyal needs its own matching pool of coupon codes in Miva. Keep the code prefixes consistent so they're easy to track.",
+      },
+    ],
+    whatNext: [
+      {
+        title: "Set up your Activities",
+        body: "Confirm at least one earning activity is active — typically 'Made a Purchase'. Go to TrueLoyal Admin → Activities and verify a points rule is configured.",
+        action: { label: "Open Activities", href: "https://app.trueloyal.com" },
+      },
+      {
+        title: "Set up your Rewards",
+        body: "Confirm at least one reward is published and has coupon codes loaded. Go to TrueLoyal Admin → Rewards.",
+        action: { label: "Open Rewards", href: "https://app.trueloyal.com" },
+      },
+      {
+        title: "Place a test order",
+        body: "Place a test order in Miva using a registered member account to trigger a points transaction.",
+      },
+      {
+        title: "Confirm points were awarded",
+        body: "After the order processes, go to TrueLoyal Admin → Activity and confirm the transaction appears and points were awarded. Allow up to 5 minutes for the first sync.",
+        action: { label: "Open Activity Log", href: "https://app.trueloyal.com" },
+      },
+      {
+        title: "Test redemption",
+        body: "Log in as the test member, open the loyalty dashboard, redeem a reward, and confirm the Miva coupon applies correctly at checkout.",
+      },
+    ],
+  },
+  {
+    id: "netsuite",
+    name: "NetSuite",
+    description: "API-level integration — configured by your dev team",
+    logoBg: "bg-[#f0f6ff]",
+    pluginType: "api",
+    connectionNote: "NetSuite integration requires a developer to configure the SuiteScript bundle. Your TrueLoyal onboarding manager will coordinate this with your team.",
+    steps: [
+      {
+        id: 1,
+        title: "Share your TrueLoyal credentials with your dev team",
+        body: "Your developers will need your Partner ID and API Key before installing the bundle. Go to TrueLoyal Admin → Settings → API and copy both values. Ask your TrueLoyal onboarding manager for the current NetSuite bundle ID at the same time.",
+        codeBlocks: [
+          { label: "TrueLoyal API base URL", value: "https://api.zinrelo.com/v2" },
+        ],
+        tip: "Your Partner ID is different from your account email — find it specifically under Settings → API in TrueLoyal admin.",
+        action: { label: "Open TrueLoyal Admin", href: "https://app.trueloyal.com" },
+      },
+      {
+        id: 2,
+        title: "Search for and install the TrueLoyal bundle",
+        body: "In NetSuite, navigate to Customization → SuiteBundler → Search & Install Bundles. Search for TrueLoyal using the bundle ID provided by your onboarding manager. Select it from the results and click Install — you'll see the Preview Bundle Install screen showing the available components before confirming.",
+        image: "https://files.readme.io/ff960b5f4d138b44bdb3b2c1880dc3c638db0c70f4372deb6d4a1b153f0f219c-Screenshot_2026-07-02_at_20.58.31.png",
+        tip: "Review the component list on the preview screen before confirming — it should include SuiteScripts, custom records, and saved searches.",
+      },
+      {
+        id: 3,
+        title: "Verify the bundle installed successfully",
+        body: "After installation completes, go to Customization → SuiteBundler → Bundles → List to confirm the TrueLoyal bundle appears with a green checkmark. If it shows an error status, contact your TrueLoyal onboarding manager before proceeding.",
+        image: "https://files.readme.io/0e98801-12.png",
+      },
+      {
+        id: 4,
+        title: "Open TrueLoyal Configuration and enter your credentials",
+        body: "Navigate to the TrueLoyal Configuration page in NetSuite (the path appears in your menu after the bundle installs). Enter your Partner ID and API Key, set your website name, and save. The configuration screen will also prompt you to map the fields TrueLoyal reads from your NetSuite records.",
+        image: "https://files.readme.io/ec8740c1b94d063d7dda10ffcb24b21aa7bbbf0b29f434a9624b308cdbb49b7a-image.png",
+        tip: "The website name field must match what TrueLoyal has on file for your account — confirm it with your onboarding manager if unsure.",
+      },
+      {
+        id: 5,
+        title: "Map your Sales Order fields to the Purchase API",
+        body: "In the configuration screen, map your NetSuite Sales Order fields to the TrueLoyal Purchase API parameters. TrueLoyal needs: customer email, order total, transaction ID, and order date. Map any custom fields your account uses here — standard fields alone may not be sufficient if your NetSuite setup uses custom transaction records.",
+        image: "https://files.readme.io/f361197-12.png",
+        codeBlocks: [
+          {
+            label: "Minimum required field mappings",
+            value: "Customer email → member identifier\nOrder amount → points calculation base\nTransaction ID → deduplication key\nOrder date → activity timestamp",
+          },
+        ],
+        tip: "TrueLoyal uses the transaction ID to deduplicate — if the same order is sent twice, points will only be awarded once. Make sure this maps to a field that is unique per order.",
+      },
+      {
+        id: 6,
+        title: "Configure the Returns API and run a test order",
+        body: "If you process returns in NetSuite, map your Return Authorization fields in the Returns API section of the configuration — this allows TrueLoyal to deduct points when an order is refunded. Once configuration is complete, create a test customer with a real email, place a test Sales Order, and check TrueLoyal Admin → Activity to confirm the transaction and points appear.",
+        image: "https://files.readme.io/67fde58-12.png",
+        tip: "If the test transaction doesn't appear after 10 minutes, check Customization → Scripting → Script Deployments in NetSuite for any error output from the TrueLoyal SuiteScripts.",
+        action: { label: "Open TrueLoyal Activity Log", href: "https://app.trueloyal.com" },
+      },
+    ],
+    whatNext: [
+      {
+        title: "Set up your Activities",
+        body: "Confirm at least one earning activity is active — typically 'Made a Purchase'. Go to TrueLoyal Admin → Activities and verify a points rule is configured with your NetSuite order currency.",
+        action: { label: "Open Activities", href: "https://app.trueloyal.com" },
+      },
+      {
+        title: "Set up your Rewards",
+        body: "Configure at least one published reward with coupon codes loaded. For NetSuite customers, coupon codes need to be valid in your NetSuite promotions or discount records.",
+        action: { label: "Open Rewards", href: "https://app.trueloyal.com" },
+      },
+      {
+        title: "Embed the loyalty dashboard",
+        body: "Add the TrueLoyal EUD (End-User Dashboard) iframe to your customer portal or account page. Get the embed snippet from TrueLoyal Admin → Embed Code. Your dev team will need to inject the member's email into the embed script.",
+        action: { label: "View Embed Docs", href: "https://help.trueloyal.com" },
+      },
+      {
+        title: "Test a full member journey",
+        body: "As a test customer: enroll in the loyalty program, place an order that advances to your trigger status, confirm points appear in the EUD, then redeem a reward and verify the coupon applies in NetSuite checkout.",
+      },
+      {
+        title: "Schedule a pre-launch review with your onboarding manager",
+        body: "Before going live, review the full member journey with your TrueLoyal onboarding manager — including points earn, redemption, EUD display, and any tier or referral mechanics you've configured.",
+      },
+    ],
+  },
+  {
+    id: "custom",
+    name: "Custom / Headless",
+    description: "Direct API integration using TrueLoyal REST API",
+    logoBg: "bg-gray-50",
+    pluginType: "api",
+    connectionNote: "Custom integrations require a developer to implement the TrueLoyal API calls directly. Your onboarding manager can provide API documentation and technical support.",
+    steps: [
+      {
+        id: 1,
+        title: "Get your API credentials",
+        body: "Your developer will need your Partner ID and API Key. Go to TrueLoyal Admin → Settings → API to copy both. Every API request must include these as headers.",
+        codeBlocks: [
+          { label: "Base URL", value: "https://api.zinrelo.com/v2" },
+          {
+            label: "Required request headers",
+            value: "partner-id: YOUR_PARTNER_ID\napi-key: YOUR_API_KEY\nContent-Type: application/json",
+          },
+        ],
+        action: { label: "Open API Reference", href: "https://help.trueloyal.com/reference" },
+        tip: "Your Partner ID is not your account email — find it specifically under Settings → API.",
+      },
+      {
+        id: 2,
+        title: "Enroll members at registration",
+        body: "When a customer creates an account or first logs in, call the member enroll endpoint. TrueLoyal will create their loyalty profile. If the member already exists, the call acts as an upsert — safe to call on every login.",
+        codeBlocks: [
+          {
+            label: "Enroll a member",
+            value: 'POST https://api.zinrelo.com/v2/loyalty/members/enroll\n\n{\n  "email": "member@example.com",\n  "first_name": "Jane",\n  "last_name": "Doe"\n}',
+          },
+        ],
+        tip: "Include as many profile fields as possible at enrollment (phone, birthdate, address) — these power segmentation and personalization features in TrueLoyal.",
+      },
+      {
+        id: 3,
+        title: "Award points on purchase",
+        body: "After a successful, fulfilled order, call the award points endpoint. Pass the member's email, the order total, and a unique transaction ID. TrueLoyal uses the transaction ID to deduplicate — the same order ID will never award points twice.",
+        codeBlocks: [
+          {
+            label: "Award purchase points",
+            value: 'POST https://api.zinrelo.com/v2/loyalty/activity/purchase\n\n{\n  "email": "member@example.com",\n  "order_total": 89.99,\n  "transaction_id": "ORDER-12345"\n}',
+          },
+        ],
+        tip: "Fire this only on fulfilled/paid orders — not on order creation. Triggering on order creation means members earn points on orders that may later be cancelled or refunded.",
+      },
+      {
+        id: 4,
+        title: "Configure the EUD embed URL in TrueLoyal admin",
+        body: "Before adding the embed snippet to your site, register your account page URL in TrueLoyal. Go to TrueLoyal Admin → Design → User Dashboard → Advanced → Embed Dashboard, and add the URL pattern of the page where you'll embed the dashboard. This tells TrueLoyal which pages are allowed to host it.",
+        image: "https://files.readme.io/1c0168811164d94c64a3fb835bad3494eea559679f26774e86df542743d25f17-image.png",
+        tip: "URL patterns support wildcards — e.g. https://yourstore.com/account/* covers all account sub-pages.",
+      },
+      {
+        id: 5,
+        title: "Copy and add the embed snippet with JWT authentication",
+        body: "In TrueLoyal Admin → Design → User Dashboard → Advanced → Embed Dashboard, copy the embed code snippet. Add it to your account page. The snippet uses a JWT to authenticate the logged-in member — your backend must generate a signed JWT and pass it as jwt_token so the dashboard loads that member's data.",
+        image: "https://files.readme.io/1a6dfef1bfd1aa190f3e0984e01b6f98724add55c387df3729372217c93f12eb-image.png",
+        codeBlocks: [
+          {
+            label: "EUD init snippet with JWT",
+            value: "<script type=\"text/javascript\">\nwindow._zrl = window._zrl || [];\n\nlet init_data = {\n  'partner_id': 'YOUR_PARTNER_ID',\n  'jwt_token': '{{ server_generated_jwt }}',\n  'version': 'v2',\n  'server': 'https://app.zinrelo.com',\n};\n_zrl.push(['init', init_data]);\n<\/script>\n<script src=\"//cdn.zinrelo.com/js/all.js\" type=\"text/javascript\"><\/script>",
+          },
+        ],
+        tip: "The JWT payload must include the member's email and be signed with your TrueLoyal API secret. Never generate the JWT on the client — it must come from your backend so the secret stays private.",
+        action: { label: "JWT authentication docs", href: "https://help.trueloyal.com/docs/authentication-javascript" },
+      },
+      {
+        id: 6,
+        title: "Configure webhooks for real-time events",
+        body: "Go to TrueLoyal Admin → Notifications → Webhooks and create a webhook endpoint. Enter your server's URL, a secret key for signature verification, and select which events to subscribe to (points earned, reward redeemed, tier change, etc.). TrueLoyal will POST a signed payload to your endpoint each time a subscribed event fires.",
+        image: "https://files.readme.io/06f16321cdb44bb521e347f63ab9eaaf3468fc13a93b2e52beab26249929c4f8-image.png",
+        codeBlocks: [
+          {
+            label: "Webhook signature verification (Python)",
+            value: "import hmac, hashlib\n\nsignature = request.headers.get('x-zinrelo-signature')\nnonce = request.headers.get('nonce')\nbody = str(request.data, 'utf-8')\nmessage = f\"{body}:{nonce}\"\ncomputed = hmac.new(\n    secret_key.encode(),\n    message.encode('utf-8'),\n    hashlib.sha512\n).hexdigest()\nassert hmac.compare_digest(computed, signature)",
+          },
+        ],
+        tip: "Always verify the webhook signature before processing the payload — this confirms the request came from TrueLoyal and hasn't been tampered with.",
+        action: { label: "Webhook docs", href: "https://help.trueloyal.com/docs/1413700-introduction-to-webhooks" },
+      },
+      {
+        id: 7,
+        title: "Test end-to-end",
+        body: "Call the enroll API with a test member email, then call the purchase API with a test order. Confirm the transaction appears in TrueLoyal Admin → Activity. Open the EUD on your account page and verify the correct balance shows. Redeem a reward and confirm the coupon arrives via your webhook endpoint.",
+        tip: "Use a real email address you control during testing — TrueLoyal sends transactional emails on key events (points earned, reward redeemed) that are worth verifying alongside the API responses.",
+        action: { label: "Open Activity Log", href: "https://app.trueloyal.com" },
+      },
+    ],
+    whatNext: [
+      {
+        title: "Set up your Activities",
+        body: "Confirm your earning activities are configured in TrueLoyal Admin → Activities. At minimum, 'Made a Purchase' should be active and pointed to the correct points-per-dollar rule.",
+        action: { label: "Open Activities", href: "https://app.trueloyal.com" },
+      },
+      {
+        title: "Set up your Rewards",
+        body: "Configure at least one published reward with coupon codes loaded. For custom integrations, confirm your checkout system accepts the coupon format TrueLoyal generates.",
+        action: { label: "Open Rewards", href: "https://app.trueloyal.com" },
+      },
+      {
+        title: "Configure webhooks",
+        body: "Set up a webhook endpoint in TrueLoyal Admin → Webhooks for real-time event notifications (points earned, rewards redeemed, tier changes). Your developer will need to build the receiving endpoint and handle the event payload.",
+        action: { label: "Open TrueLoyal Admin", href: "https://app.trueloyal.com" },
+      },
+      {
+        title: "Review the full API reference",
+        body: "Beyond member enroll and purchase activity, the API supports custom activities, points adjustments, member lookups, and more. Your developer should review the full reference before finalising the integration.",
+        action: { label: "API Reference", href: "https://help.trueloyal.com/reference" },
+      },
+      {
+        title: "Schedule a pre-launch review",
+        body: "Before going live, walk through the full member journey with your TrueLoyal onboarding manager — enroll, earn, redeem, EUD display — and confirm all webhook events are being received correctly.",
+      },
+    ],
+  },
+];
+
+// ─── FAQ DATA ───────────────────────────────────────────────────────────────
+const FAQ = [
+  {
+    q: "How long does a typical integration take?",
+    a: "Native plugins (Shopify, VTEX, BigCommerce, WooCommerce, Magento, Miva) can be set up in a few hours. API-based integrations (NetSuite, Custom/Headless) depend on developer availability and usually take 1–2 weeks from kickoff to testing.",
+  },
+  {
+    q: "Do I need a developer for native plugins?",
+    a: "For Shopify, BigCommerce, and VTEX, no developer is required — these are fully no-code installs from the app store. WooCommerce, Magento, and Miva have some admin configuration steps but are still merchant-friendly. NetSuite and Custom integrations require developer involvement.",
+  },
+  {
+    q: "Where do I find my Partner ID and API Key?",
+    a: "Both are in TrueLoyal Admin → General → Settings → API. Your Partner ID is not your account email address — it's a short alphanumeric string. Copy it from the Settings page rather than guessing.",
+  },
+  {
+    q: "Can I run TrueLoyal on multiple storefronts?",
+    a: "Yes. Each storefront gets its own integration configured against your TrueLoyal account. Contact your onboarding manager about multi-store setups — there may be specific configuration required depending on your platform.",
+  },
+  {
+    q: "What happens if a member places an order before enrolling?",
+    a: "By default, points are only awarded to enrolled members. If a customer places an order before joining the loyalty program, no points are awarded retroactively. You can manually add a points adjustment in TrueLoyal Admin if needed.",
+  },
+  {
+    q: "How do I test the integration without real transactions?",
+    a: "Each platform guide includes a testing step. Shopify uses the Bogus Gateway, BigCommerce has a Test Payment Gateway, and WooCommerce has a Cheque payment method. For API integrations, call the enroll and purchase endpoints directly with test data.",
+  },
+  {
+    q: "What's the difference between native and API integrations?",
+    a: "Native plugins (app store installs) handle the connection automatically — you just configure credentials. API integrations require your developer to call the TrueLoyal REST API endpoints directly, giving more control but requiring custom code.",
+  },
+  {
+    q: "How do coupon-based rewards work across platforms?",
+    a: "TrueLoyal generates a coupon code when a member redeems a reward. That coupon must also exist in your store's discount/coupon system with matching code and value. The platform guides include steps for setting up the matching coupons on each platform.",
+  },
+  {
+    q: "Why aren't points showing up after a test order?",
+    a: "The most common causes: (1) the earning activity isn't enabled in TrueLoyal Admin → Activities, (2) the order status doesn't match the configured trigger (e.g. you need 'Paid' status, not 'Pending'), or (3) the member email in the order doesn't match a TrueLoyal enrolled member. Allow up to 5 minutes for the first sync.",
+  },
+  {
+    q: "What do I do if I get stuck?",
+    a: "Contact your TrueLoyal onboarding manager directly. You can also reach TrueLoyal support at help.trueloyal.com. For urgent issues during launch, escalate via Slack if your team has a shared channel.",
+  },
+];
+
+// ─── STATE ──────────────────────────────────────────────────────────────────
+let state = {
+  // { [platformId]: Set<stepId> }
+  completed: JSON.parse(localStorage.getItem('tl_completed') || '{}'),
+  // { [platformId]: number } — active step index (0-based)
+  activeStep: {},
+  // { [faqIndex]: bool }
+  faqOpen: {},
+};
+
+function saveCompleted() {
+  // localStorage stores plain objects — convert Sets to arrays
+  const out = {};
+  for (const [k, v] of Object.entries(state.completed)) {
+    out[k] = v instanceof Set ? [...v] : v;
+  }
+  localStorage.setItem('tl_completed', JSON.stringify(out));
+}
+
+function getCompleted(platformId) {
+  const raw = state.completed[platformId];
+  if (!raw) return new Set();
+  if (raw instanceof Set) return raw;
+  return new Set(raw);
+}
+
+// ─── ROUTER ─────────────────────────────────────────────────────────────────
+function getRoute() {
+  const hash = window.location.hash.replace('#', '') || '/';
+  const [path, queryString] = hash.split('?');
+  const params = {};
+  if (queryString) {
+    queryString.split('&').forEach(p => {
+      const [k, v] = p.split('=');
+      params[k] = v;
+    });
+  }
+  const parts = path.split('/').filter(Boolean);
+  if (parts.length === 0) return { page: 'home', params };
+  if (parts[0] === 'migrate') return { page: 'migrate', params };
+  if (parts[0] === 'setup' && parts[1]) return { page: 'platform', id: parts[1], params };
+  if (parts[0] === 'setup') return { page: 'setup', params };
+  return { page: 'home', params };
+}
+
+function navigate(path) {
+  window.location.hash = path;
+}
+
+// ─── HEADER ─────────────────────────────────────────────────────────────────
+function renderHeader() {
+  return `
+    <header class="bg-[#001e45] shadow-md no-print" style="background-color:#001e45">
+      <div class="max-w-4xl mx-auto px-4 py-4 flex items-center">
+        <a href="#/" class="flex items-center gap-3 cursor-pointer" data-link="/">
+          <img src="data:image/png;base64,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" alt="TrueLoyal" class="h-8 w-auto" />
+        </a>
+        <span class="ml-3 text-white/60 text-sm hidden sm:inline">Integration Setup Wizard</span>
+      </div>
+    </header>
+  `;
+}
+
+// ─── HOME PAGE ──────────────────────────────────────────────────────────────
+function renderHome() {
+  return `
+    ${renderHeader()}
+    <main class="max-w-2xl mx-auto px-4 py-16">
+      <div class="text-center mb-12">
+        <h1 class="text-3xl font-bold text-[#001e45] mb-3">Set up your loyalty integration</h1>
+        <p class="text-gray-600 text-lg">Choose how you'd like to get started.</p>
+      </div>
+      <div class="grid gap-4 sm:grid-cols-2">
+        <button
+          data-link="/setup"
+          class="group bg-white rounded-2xl shadow-sm border border-gray-200 p-8 text-left hover:border-[#001e45] hover:shadow-md transition-all duration-150 cursor-pointer"
+        >
+          <div class="w-12 h-12 rounded-xl bg-[#001e45] flex items-center justify-center mb-4 group-hover:scale-105 transition-transform">
+            <svg class="w-6 h-6 text-white" fill="none" stroke="white" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+          </div>
+          <h2 class="text-xl font-semibold text-[#001e45] mb-2">Starting fresh</h2>
+          <p class="text-gray-500 text-sm">New to TrueLoyal. I need to set up my integration for the first time.</p>
+          <div class="mt-4 text-[#001e45] text-sm font-medium flex items-center gap-1">
+            Pick your platform
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+          </div>
+        </button>
+        <button
+          data-link="/migrate"
+          class="group bg-white rounded-2xl shadow-sm border border-gray-200 p-8 text-left hover:border-[#f8b4c3] hover:shadow-md transition-all duration-150 cursor-pointer"
+        >
+          <div class="w-12 h-12 rounded-xl bg-[#f8b4c3] flex items-center justify-center mb-4 group-hover:scale-105 transition-transform">
+            <svg class="w-6 h-6" fill="none" stroke="#001e45" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"/></svg>
+          </div>
+          <h2 class="text-xl font-semibold text-[#001e45] mb-2">Migrating from another program</h2>
+          <p class="text-gray-500 text-sm">I have an existing loyalty program and need to migrate members and history to TrueLoyal.</p>
+          <div class="mt-4 text-[#001e45] text-sm font-medium flex items-center gap-1">
+            See migration checklist
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+          </div>
+        </button>
+      </div>
+    </main>
+  `;
+}
+
+// ─── MIGRATE PAGE ────────────────────────────────────────────────────────────
+function renderMigrate() {
+  return `
+    ${renderHeader()}
+    <main class="max-w-2xl mx-auto px-4 py-10">
+      <button data-link="/setup" class="no-print flex items-center gap-2 text-sm text-gray-500 hover:text-[#001e45] mb-6 transition-colors">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
+        Back
+      </button>
+
+      <h1 class="text-2xl font-bold text-[#001e45] mb-2">Migration checklist</h1>
+      <p class="text-gray-600 mb-6">Complete these steps before starting your integration setup. Missing data is hard to recover after launch.</p>
+
+      <div class="bg-amber-50 border border-amber-200 rounded-xl p-4 mb-8 flex gap-3">
+        <svg class="w-5 h-5 text-amber-600 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
+        <div>
+          <p class="text-amber-800 font-medium text-sm">Do this before your integration kickoff</p>
+          <p class="text-amber-700 text-sm mt-1">Migrating member data after the integration goes live is significantly more complex. Get your data export in shape now.</p>
+        </div>
+      </div>
+
+      <div class="space-y-3 mb-10">
+        ${[
+          {
+            n: 1,
+            title: "Export your current member list",
+            body: "Pull a full export of your existing loyalty members — email addresses, names, enrollment dates, and any other profile fields your program tracked. Clean up obvious duplicates or bad email addresses now.",
+          },
+          {
+            n: 2,
+            title: "Export current points balances",
+            body: "For each active member, export their current points balance. This is the number that will be imported as their starting balance in TrueLoyal.",
+          },
+          {
+            n: 3,
+            title: "Export transaction history (if required)",
+            body: "If your contract includes historical transaction data, export order history by member. TrueLoyal can import this to seed the activity log. Confirm with your onboarding manager whether this is in scope.",
+          },
+          {
+            n: 4,
+            title: "Export tier or status data",
+            body: "If your existing program has tiers or VIP statuses, export each member's current tier. TrueLoyal will need this to set starting tier assignments.",
+          },
+          {
+            n: 5,
+            title: "Format your data to TrueLoyal's import template",
+            body: "Your onboarding manager will share the required CSV format for member and points imports. Map your exported columns to the required fields before sending.",
+            link: { label: "Member import documentation", href: "https://help.trueloyal.com" },
+          },
+          {
+            n: 6,
+            title: "Agree on a cutover date with your onboarding manager",
+            body: "Decide the exact date and time when your old program ends and TrueLoyal goes live. Members should not be able to earn or redeem in the old system after that moment.",
+          },
+          {
+            n: 7,
+            title: "Communicate the transition to your members",
+            body: "Send members advance notice of the program change — at minimum, confirm their balance will carry over. Work with your marketing team on messaging. Your onboarding manager can provide suggested copy.",
+          },
+        ].map(item => `
+          <div class="bg-white rounded-xl border border-gray-200 p-5 flex gap-4">
+            <div class="w-7 h-7 rounded-full bg-[#001e45] text-white text-xs font-bold flex items-center justify-center flex-shrink-0 mt-0.5">${item.n}</div>
+            <div>
+              <h3 class="font-semibold text-gray-900 text-sm mb-1">${item.title}</h3>
+              <p class="text-gray-600 text-sm">${item.body}</p>
+              ${item.link ? `<a href="${item.link.href}" target="_blank" rel="noopener" class="inline-flex items-center gap-1 mt-2 text-[#001e45] text-sm font-medium hover:underline">${item.link.label}<svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/></svg></a>` : ''}
+            </div>
+          </div>
+        `).join('')}
+      </div>
+
+      <div class="bg-[#001e45] rounded-2xl p-6 text-white text-center">
+        <h2 class="text-lg font-semibold mb-2">Ready to set up your integration?</h2>
+        <p class="text-white/70 text-sm mb-4">Once your migration data is ready, follow the standard setup guide for your platform.</p>
+        <button data-link="/setup" class="bg-[#f8b4c3] text-[#001e45] font-semibold px-6 py-2.5 rounded-lg hover:bg-pink-200 transition-colors">
+          Continue to platform setup
+        </button>
+      </div>
+    </main>
+  `;
+}
+
+// ─── SETUP PAGE (platform grid) ──────────────────────────────────────────────
+function renderSetup() {
+  return `
+    ${renderHeader()}
+    <main class="max-w-4xl mx-auto px-4 py-10">
+      <button data-link="/" class="no-print flex items-center gap-2 text-sm text-gray-500 hover:text-[#001e45] mb-6 transition-colors">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
+        Back
+      </button>
+
+      <h1 class="text-2xl font-bold text-[#001e45] mb-2">Choose your platform</h1>
+      <p class="text-gray-600 mb-8">Select your ecommerce platform to see the setup steps for your integration.</p>
+
+      <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-4 mb-16">
+        ${PLATFORMS.map(p => {
+          const completed = getCompleted(p.id);
+          const pct = Math.round((completed.size / p.steps.length) * 100);
+          const done = completed.size === p.steps.length;
+          return `
+            <button
+              data-link="/setup/${p.id}"
+              class="group bg-white rounded-2xl border ${done ? 'border-[#f8b4c3]' : 'border-gray-200'} p-5 text-left hover:border-[#001e45] hover:shadow-md transition-all duration-150 cursor-pointer relative overflow-hidden"
+            >
+              ${done ? `<div class="absolute top-3 right-3 w-5 h-5 rounded-full bg-[#f8b4c3] flex items-center justify-center"><svg class="w-3 h-3" fill="none" stroke="#001e45" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg></div>` : ''}
+              <div class="w-10 h-10 rounded-xl ${p.logoBg} flex items-center justify-center mb-3 p-2 group-hover:scale-105 transition-transform">
+                ${LOGOS[p.id]}
+              </div>
+              <h3 class="font-semibold text-gray-900 text-sm mb-1">${p.name}</h3>
+              <p class="text-gray-500 text-xs mb-3 leading-snug">${p.description}</p>
+              ${pct > 0 && !done ? `
+                <div class="w-full bg-gray-100 rounded-full h-1.5">
+                  <div class="bg-[#001e45] h-1.5 rounded-full transition-all" style="width:${pct}%"></div>
+                </div>
+                <p class="text-xs text-gray-400 mt-1">${completed.size}/${p.steps.length} steps</p>
+              ` : done ? `<p class="text-xs text-[#001e45] font-medium">Setup complete</p>` : `<p class="text-xs text-gray-400">${p.steps.length} steps</p>`}
+            </button>
+          `;
+        }).join('')}
+      </div>
+
+      <!-- FAQ -->
+      <div class="border-t border-gray-200 pt-10">
+        <h2 class="text-xl font-bold text-[#001e45] mb-6">Frequently asked questions</h2>
+        <div class="space-y-2" id="faq-list">
+          ${FAQ.map((item, i) => `
+            <div class="bg-white rounded-xl border border-gray-200 overflow-hidden">
+              <button
+                class="w-full text-left px-5 py-4 flex items-center justify-between gap-4 hover:bg-gray-50 transition-colors"
+                data-faq="${i}"
+              >
+                <span class="font-medium text-gray-900 text-sm">${item.q}</span>
+                <svg class="w-4 h-4 text-gray-400 flex-shrink-0 transition-transform duration-200 ${state.faqOpen[i] ? 'rotate-180' : ''}" fill="none" stroke="currentColor" viewBox="0 0 24 24" id="faq-chevron-${i}"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+              </button>
+              <div class="accordion-body ${state.faqOpen[i] ? 'open' : 'closed'}" id="faq-body-${i}">
+                <div class="px-5 pb-4 text-gray-600 text-sm leading-relaxed">${item.a}</div>
+              </div>
+            </div>
+          `).join('')}
+        </div>
+      </div>
+    </main>
+  `;
+}
+
+// ─── PLATFORM PAGE ───────────────────────────────────────────────────────────
+function renderPlatform(id, params) {
+  const platform = PLATFORMS.find(p => p.id === id);
+  if (!platform) {
+    return `
+      ${renderHeader()}
+      <main class="max-w-2xl mx-auto px-4 py-16 text-center">
+        <h1 class="text-2xl font-bold text-[#001e45] mb-4">Platform not found</h1>
+        <button data-link="/setup" class="bg-[#001e45] text-white px-6 py-2 rounded-lg">Back to setup</button>
+      </main>
+    `;
+  }
+
+  const completed = getCompleted(id);
+  const totalSteps = platform.steps.length;
+  const completedCount = completed.size;
+  const allDone = completedCount === totalSteps;
+  const pct = Math.round((completedCount / totalSteps) * 100);
+
+  // Determine active step: from URL param, or first incomplete, or last
+  let activeIdx = 0;
+  if (params && params.step) {
+    const stepId = parseInt(params.step, 10);
+    const found = platform.steps.findIndex(s => s.id === stepId);
+    if (found >= 0) activeIdx = found;
+  } else if (state.activeStep[id] !== undefined) {
+    activeIdx = state.activeStep[id];
+  } else {
+    // Find first incomplete
+    const firstIncomplete = platform.steps.findIndex(s => !completed.has(s.id));
+    activeIdx = firstIncomplete >= 0 ? firstIncomplete : 0;
+  }
+  if (activeIdx >= totalSteps) activeIdx = totalSteps - 1;
+  state.activeStep[id] = activeIdx;
+
+  const activeStep = platform.steps[activeIdx];
+
+  function stepCard(step, idx) {
+    const isDone = completed.has(step.id);
+    const isActive = idx === activeIdx;
+    const isLocked = idx > 0 && !completed.has(platform.steps[idx - 1].id) && !isDone && !isActive;
+
+    return `
+      <div
+        class="step-card rounded-xl border-2 transition-all duration-200 cursor-pointer overflow-hidden
+          ${isDone ? 'border-[#f8b4c3] bg-[#f8b4c3]/10' : isActive ? 'border-[#001e45] bg-white shadow-md' : 'border-gray-200 bg-white hover:border-gray-300'}"
+        data-step-idx="${idx}"
+        data-platform="${id}"
+        id="step-card-${idx}"
+      >
+        <!-- Step header (always visible) -->
+        <div class="flex items-center gap-3 p-4 select-none">
+          <div class="flex-shrink-0 w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold
+            ${isDone ? 'bg-[#f8b4c3] text-[#001e45]' : isActive ? 'bg-[#001e45] text-white' : 'bg-gray-100 text-gray-500'}">
+            ${isDone
+              ? `<svg class="w-4 h-4 check-pop" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>`
+              : step.id}
+          </div>
+          <span class="font-medium text-sm flex-1 ${isDone ? 'text-gray-500 line-through' : isActive ? 'text-[#001e45]' : 'text-gray-700'}">${step.title}</span>
+          <svg class="w-4 h-4 text-gray-400 flex-shrink-0 transition-transform ${isActive ? 'rotate-180' : ''}" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+        </div>
+
+        <!-- Step body (visible when active) -->
+        <div class="step-body ${isActive ? 'print-expand' : ''}" ${isActive ? '' : 'style="display:none"'}>
+          <div class="px-4 pb-5 space-y-4">
+            <p class="text-gray-700 text-sm leading-relaxed">${step.body}</p>
+
+            ${step.image ? `<img src="${step.image}" alt="${step.title}" class="w-full rounded-lg border border-gray-200 object-cover max-h-72" loading="lazy" onerror="this.style.display='none'" />` : ''}
+
+            ${step.codeBlocks ? step.codeBlocks.map(cb => `
+              <div>
+                <p class="text-xs font-medium text-gray-500 mb-1">${cb.label}</p>
+                <div class="relative group/code">
+                  <pre class="bg-gray-950 text-green-400 text-xs rounded-lg px-4 py-3 font-mono leading-relaxed overflow-x-auto">${escHtml(cb.value)}</pre>
+                  <button
+                    class="no-print absolute top-2 right-2 opacity-0 group-hover/code:opacity-100 transition-opacity bg-gray-700 hover:bg-gray-600 text-white text-xs px-2 py-1 rounded"
+                    data-copy="${escAttr(cb.value)}"
+                  >Copy</button>
+                </div>
+              </div>
+            `).join('') : ''}
+
+            ${step.tip ? `
+              <div class="bg-blue-50 border border-blue-100 rounded-lg p-3 flex gap-2">
+                <svg class="w-4 h-4 text-blue-500 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                <p class="text-blue-700 text-xs leading-relaxed">${step.tip}</p>
+              </div>
+            ` : ''}
+
+            <div class="flex flex-wrap items-center gap-2 pt-1 no-print">
+              ${step.action ? `
+                <a href="${step.action.href}" target="_blank" rel="noopener"
+                  class="inline-flex items-center gap-1.5 text-sm bg-white border border-gray-200 text-[#001e45] font-medium px-3 py-1.5 rounded-lg hover:bg-gray-50 transition-colors">
+                  ${step.action.label}
+                  <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/></svg>
+                </a>
+              ` : ''}
+
+              <button
+                class="inline-flex items-center gap-1.5 text-xs text-gray-400 hover:text-gray-600 px-2 py-1.5 rounded transition-colors"
+                data-copy-link="${id}" data-copy-step="${step.id}"
+                title="Copy link to this step"
+              >
+                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"/></svg>
+                Copy link to step
+              </button>
+
+              <div class="flex-1"></div>
+
+              ${isDone
+                ? `<button data-uncomplete="${id}" data-step="${step.id}" class="text-xs text-gray-400 hover:text-gray-600 underline px-2 py-1.5 transition-colors">Mark incomplete</button>`
+                : `<button data-complete="${id}" data-step="${step.id}" data-next-idx="${idx + 1 < totalSteps ? idx + 1 : -1}"
+                    class="bg-[#001e45] text-white text-sm font-medium px-4 py-2 rounded-lg hover:bg-[#002d6b] transition-colors flex items-center gap-2">
+                    ${idx + 1 < totalSteps ? 'Mark complete &amp; continue' : 'Mark complete'}
+                    <svg class="w-4 h-4" fill="none" stroke="white" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>
+                  </button>`
+              }
+            </div>
+          </div>
+        </div>
+      </div>
+    `;
+  }
+
+  return `
+    ${renderHeader()}
+    <main class="max-w-2xl mx-auto px-4 py-8 print-full-width">
+
+      <!-- Back + Print -->
+      <div class="flex items-center justify-between mb-6 no-print">
+        <button data-link="/setup" class="flex items-center gap-2 text-sm text-gray-500 hover:text-[#001e45] transition-colors">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
+          All platforms
+        </button>
+        <button id="print-btn" class="flex items-center gap-1.5 text-sm text-gray-500 hover:text-[#001e45] transition-colors border border-gray-200 rounded-lg px-3 py-1.5 hover:border-gray-300">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"/></svg>
+          Print / Save PDF
+        </button>
+      </div>
+
+      <!-- Platform header -->
+      <div class="flex items-center gap-4 mb-6">
+        <div class="w-12 h-12 rounded-xl ${platform.logoBg} flex items-center justify-center p-2.5 flex-shrink-0">
+          ${LOGOS[id]}
+        </div>
+        <div>
+          <h1 class="text-xl font-bold text-[#001e45]">${platform.name}</h1>
+          <p class="text-gray-500 text-sm">${platform.description}</p>
+        </div>
+      </div>
+
+      ${platform.connectionNote ? `
+        <div class="bg-amber-50 border border-amber-200 rounded-xl p-4 mb-6 flex gap-3">
+          <svg class="w-5 h-5 text-amber-600 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+          <p class="text-amber-800 text-sm">${platform.connectionNote}</p>
+        </div>
+      ` : ''}
+
+      <!-- Progress bar -->
+      <div class="mb-8">
+        <div class="flex items-center justify-between text-xs text-gray-500 mb-1.5">
+          <span>${completedCount} of ${totalSteps} steps complete</span>
+          <span>${pct}%</span>
+        </div>
+        <div class="w-full bg-gray-200 rounded-full h-2">
+          <div class="h-2 rounded-full transition-all duration-500 ${allDone ? 'bg-[#f8b4c3]' : 'bg-[#001e45]'}" style="width:${pct}%"></div>
+        </div>
+      </div>
+
+      <!-- Steps -->
+      ${allDone ? renderSuccessScreen(platform) : `
+        <div class="space-y-3" id="steps-list">
+          ${platform.steps.map((step, idx) => stepCard(step, idx)).join('')}
+        </div>
+      `}
+
+    </main>
+  `;
+}
+
+function renderSuccessScreen(platform) {
+  return `
+    <div class="text-center py-8">
+      <div class="w-16 h-16 rounded-full bg-[#f8b4c3] flex items-center justify-center mx-auto mb-4">
+        <svg class="w-8 h-8" fill="none" stroke="#001e45" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>
+      </div>
+      <h2 class="text-2xl font-bold text-[#001e45] mb-2">Integration complete!</h2>
+      <p class="text-gray-600 mb-8">You've finished the ${platform.name} setup. Here's what to do next.</p>
+    </div>
+
+    <div class="space-y-3 mb-8">
+      ${(platform.whatNext || []).map((item, i) => `
+        <div class="bg-white rounded-xl border border-gray-200 p-5">
+          <div class="flex items-start gap-3">
+            <div class="w-6 h-6 rounded-full bg-[#f8b4c3] text-[#001e45] text-xs font-bold flex items-center justify-center flex-shrink-0 mt-0.5">${i + 1}</div>
+            <div class="flex-1">
+              <h3 class="font-semibold text-gray-900 text-sm mb-1">${item.title}</h3>
+              <p class="text-gray-600 text-sm leading-relaxed">${item.body}</p>
+              ${item.action ? `
+                <a href="${item.action.href}" target="_blank" rel="noopener"
+                  class="inline-flex items-center gap-1.5 mt-2 text-sm text-[#001e45] font-medium hover:underline no-print">
+                  ${item.action.label}
+                  <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/></svg>
+                </a>
+              ` : ''}
+            </div>
+          </div>
+        </div>
+      `).join('')}
+    </div>
+
+    <div class="flex flex-wrap gap-3 no-print">
+      <button data-link="/setup" class="bg-[#001e45] text-white font-medium px-5 py-2.5 rounded-lg hover:bg-[#002d6b] transition-colors">
+        Back to all platforms
+      </button>
+      <button data-reset-platform="${platform.id}" class="text-gray-500 border border-gray-200 px-4 py-2.5 rounded-lg hover:bg-gray-50 text-sm transition-colors">
+        Reset progress
+      </button>
+    </div>
+  `;
+}
+
+// ─── HELPERS ─────────────────────────────────────────────────────────────────
+function escHtml(str) {
+  return str
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;');
+}
+
+function escAttr(str) {
+  return str.replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+}
+
+function showToast(msg) {
+  const existing = document.getElementById('tl-toast');
+  if (existing) existing.remove();
+  const toast = document.createElement('div');
+  toast.id = 'tl-toast';
+  toast.className = 'fixed bottom-4 right-4 bg-gray-900 text-white text-sm px-4 py-2.5 rounded-lg shadow-lg z-50 no-print';
+  toast.textContent = msg;
+  document.body.appendChild(toast);
+  setTimeout(() => toast.remove(), 2200);
+}
+
+// ─── RENDER ENGINE ───────────────────────────────────────────────────────────
+function render() {
+  const route = getRoute();
+  const app = document.getElementById('app');
+
+  if (route.page === 'home') {
+    app.innerHTML = renderHome();
+  } else if (route.page === 'migrate') {
+    app.innerHTML = renderMigrate();
+  } else if (route.page === 'setup') {
+    app.innerHTML = renderSetup();
+  } else if (route.page === 'platform') {
+    app.innerHTML = renderPlatform(route.id, route.params);
+  } else {
+    app.innerHTML = renderHome();
+  }
+
+  // Scroll to top on navigation
+  window.scrollTo(0, 0);
+}
+
+// ─── EVENT DELEGATION ────────────────────────────────────────────────────────
+document.addEventListener('click', function(e) {
+  const target = e.target.closest('[data-link]');
+  if (target) {
+    e.preventDefault();
+    navigate(target.dataset.link);
+    return;
+  }
+
+  // FAQ accordion
+  const faqBtn = e.target.closest('[data-faq]');
+  if (faqBtn) {
+    const i = parseInt(faqBtn.dataset.faq, 10);
+    state.faqOpen[i] = !state.faqOpen[i];
+    const body = document.getElementById(`faq-body-${i}`);
+    const chevron = document.getElementById(`faq-chevron-${i}`);
+    if (body) {
+      body.classList.toggle('open', state.faqOpen[i]);
+      body.classList.toggle('closed', !state.faqOpen[i]);
+    }
+    if (chevron) {
+      chevron.classList.toggle('rotate-180', state.faqOpen[i]);
+    }
+    return;
+  }
+
+  // Step card toggle (click header to expand/collapse)
+  const stepCard = e.target.closest('[data-step-idx]');
+  if (stepCard && !e.target.closest('[data-complete]') && !e.target.closest('[data-uncomplete]') && !e.target.closest('[data-copy-link]') && !e.target.closest('[data-copy]') && !e.target.closest('a') && !e.target.closest('button[data-complete]') && !e.target.closest('button[data-uncomplete]')) {
+    const platformId = stepCard.dataset.platform;
+    const newIdx = parseInt(stepCard.dataset.stepIdx, 10);
+    if (state.activeStep[platformId] === newIdx) {
+      // Collapse current
+      state.activeStep[platformId] = -1;
+    } else {
+      state.activeStep[platformId] = newIdx;
+    }
+    render();
+    // Scroll to opened step
+    if (state.activeStep[platformId] >= 0) {
+      setTimeout(() => {
+        const el = document.getElementById(`step-card-${newIdx}`);
+        if (el) el.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+      }, 50);
+    }
+    return;
+  }
+
+  // Mark complete
+  const completeBtn = e.target.closest('[data-complete]');
+  if (completeBtn) {
+    const platformId = completeBtn.dataset.complete;
+    const stepId = parseInt(completeBtn.dataset.step, 10);
+    const nextIdx = parseInt(completeBtn.dataset.nextIdx, 10);
+    const completed = getCompleted(platformId);
+    completed.add(stepId);
+    state.completed[platformId] = completed;
+    saveCompleted();
+    if (nextIdx >= 0) {
+      state.activeStep[platformId] = nextIdx;
+    }
+    render();
+    if (nextIdx >= 0) {
+      setTimeout(() => {
+        const el = document.getElementById(`step-card-${nextIdx}`);
+        if (el) el.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+      }, 50);
+    }
+    return;
+  }
+
+  // Mark incomplete
+  const uncompleteBtn = e.target.closest('[data-uncomplete]');
+  if (uncompleteBtn) {
+    const platformId = uncompleteBtn.dataset.uncomplete;
+    const stepId = parseInt(uncompleteBtn.dataset.step, 10);
+    const completed = getCompleted(platformId);
+    completed.delete(stepId);
+    state.completed[platformId] = completed;
+    saveCompleted();
+    render();
+    return;
+  }
+
+  // Reset platform
+  const resetBtn = e.target.closest('[data-reset-platform]');
+  if (resetBtn) {
+    const platformId = resetBtn.dataset.resetPlatform;
+    delete state.completed[platformId];
+    delete state.activeStep[platformId];
+    saveCompleted();
+    render();
+    return;
+  }
+
+  // Copy link to step
+  const copyLinkBtn = e.target.closest('[data-copy-link]');
+  if (copyLinkBtn) {
+    const platformId = copyLinkBtn.dataset.copyLink;
+    const stepId = copyLinkBtn.dataset.copyStep;
+    const url = `${location.origin}${location.pathname}#/setup/${platformId}?step=${stepId}`;
+    navigator.clipboard.writeText(url).then(() => showToast('Link copied to clipboard'));
+    return;
+  }
+
+  // Copy code block
+  const copyBtn = e.target.closest('[data-copy]');
+  if (copyBtn) {
+    const text = copyBtn.dataset.copy;
+    navigator.clipboard.writeText(text).then(() => showToast('Copied to clipboard'));
+    return;
+  }
+
+  // Print button
+  const printBtn = e.target.closest('#print-btn');
+  if (printBtn) {
+    // Expand all step bodies before printing
+    document.querySelectorAll('.step-body').forEach(el => {
+      el.style.display = '';
+    });
+    window.print();
+    return;
+  }
+});
+
+// ─── HASH ROUTING ────────────────────────────────────────────────────────────
+window.addEventListener('hashchange', render);
+window.addEventListener('DOMContentLoaded', render);
+
+// Fallback if DOMContentLoaded already fired
+if (document.readyState !== 'loading') {
+  render();
+}
+</script>
+</body>
+</html>
