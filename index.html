@@ -72,6 +72,7 @@ const LOGOS = {
   miva: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="#0071BC"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>`,
   netsuite: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="#1A7AB8"><path d="M3 3h8v8H3zm0 10h8v8H3zM13 3h8v8h-8zm0 10h8v8h-8z"/></svg>`,
   custom: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="#64748b"><path d="M12 15.5A3.5 3.5 0 018.5 12 3.5 3.5 0 0112 8.5a3.5 3.5 0 013.5 3.5 3.5 3.5 0 01-3.5 3.5m7.43-2.92c.04-.34.07-.68.07-1.08s-.03-.73-.07-1.08l2.32-1.82c.21-.16.27-.46.13-.7l-2.2-3.82c-.14-.24-.42-.32-.66-.24l-2.74 1.1c-.57-.44-1.18-.8-1.85-1.08L14.7 2.42c-.04-.26-.27-.42-.53-.42h-4.4c-.26 0-.49.16-.53.42l-.42 2.92c-.67.28-1.28.64-1.85 1.08l-2.74-1.1c-.24-.08-.52 0-.66.24l-2.2 3.82c-.14.24-.08.54.13.7l2.32 1.82c-.04.35-.07.7-.07 1.08s.03.73.07 1.08L2.51 15.4c-.21.16-.27.46-.13.7l2.2 3.82c.14.24.42.32.66.24l2.74-1.1c.57.44 1.18.8 1.85 1.08l.42 2.92c.04.26.27.42.53.42h4.4c.26 0 .49-.16.53-.42l.42-2.92c.67-.28 1.28-.64 1.85-1.08l2.74 1.1c.24.08.52 0 .66-.24l2.2-3.82c.14-.24.08-.54-.13-.7l-2.32-1.82z"/></svg>`,
+  sfcc: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="#00A1E0"><path d="M16.3 11.1c-.4-.2-.8-.3-1.2-.3-.7 0-1.3.3-1.7.8-.4.5-.6 1.1-.6 1.8 0 .7.2 1.3.6 1.7.4.5 1 .7 1.7.7.4 0 .8-.1 1.2-.3v1.2c-.4.2-.9.3-1.4.3-1 0-1.9-.3-2.5-1-.6-.7-.9-1.5-.9-2.6 0-1.1.3-2 1-2.7.7-.7 1.5-1 2.5-1 .5 0 1 .1 1.4.3l-.1 1.1zM9.2 9.7c-.3-.1-.6-.2-1-.2-.4 0-.7.1-.9.3-.2.2-.3.4-.3.7 0 .3.1.5.3.7.2.2.6.4 1.1.6.7.3 1.2.6 1.5.9.3.3.5.8.5 1.4 0 .7-.2 1.3-.7 1.7-.5.4-1.1.6-1.9.6-.5 0-1-.1-1.5-.3v-1.2c.5.3 1 .4 1.4.4.4 0 .7-.1 1-.3.2-.2.4-.5.4-.8 0-.3-.1-.5-.3-.7-.2-.2-.6-.4-1.1-.6-.7-.3-1.2-.6-1.5-.9-.3-.3-.5-.8-.5-1.3 0-.7.2-1.2.7-1.6.5-.4 1.1-.6 1.8-.6.5 0 .9.1 1.3.2l-.3 1zm9.3 7.2V9.1h1.2v7.8h-1.2zm-5.8 0V9.1h4v1.1h-2.8v2.1h2.6v1.1h-2.6v2.4h2.9v1.1h-4.1zM12 2C6.5 2 2 6.5 2 12s4.5 10 10 10 10-4.5 10-10S17.5 2 12 2z"/></svg>`,
 };
 
 // ─── PLATFORM DATA ─────────────────────────────────────────────────────────
@@ -747,6 +748,137 @@ const PLATFORMS = [
       {
         title: "Schedule a pre-launch review",
         body: "Before going live, walk through the full member journey with your TrueLoyal onboarding manager — enroll, earn, redeem, EUD display — and confirm all webhook events are being received correctly.",
+      },
+    ],
+  },
+  {
+    id: "sfcc",
+    name: "Salesforce Commerce Cloud",
+    description: "Install via cartridge — developer integration",
+    logoBg: "bg-[#e8f4ff]",
+    pluginType: "developer",
+    connectionNote: "This integration requires developer access to your SFCC instance.",
+    steps: [
+      {
+        id: 1,
+        title: "Install the TrueLoyal cartridge",
+        body: "Download the SFCC plugin from the TrueLoyal GitHub repository and install it into your SFCC instance. The plugin is compatible with SFCC version 22.7 — contact your onboarding manager if you're on a different version.",
+        action: { label: "Download cartridge on GitHub", href: "https://github.com/zinrelo-org/plugin-sfcc/releases/tag/releaseV22.7" },
+        tip: "The metadata folder you'll need in the next step is located within the package, parallel to the cartridge folder.",
+      },
+      {
+        id: 2,
+        title: "Import metadata",
+        body: "Compress the metadata folder and upload it through the SFCC admin interface to import system objects, services, and jobs. Navigate to Administration → Site Development → Site Import & Export, upload the compressed file, then run the import.",
+      },
+      {
+        id: 3,
+        title: "Compile and configure the cartridge path",
+        body: "Place the int_zinrelo_sfra cartridge alongside your other project cartridges and include it in your webpack configuration (sfraBuilderConfig.js if applicable). Then upload/deploy the code and set the cartridge path in your active code version to: app_custom:int_zinrelo_sfra:app_storefront_base — TrueLoyal must sit to the left of the base cartridge and to the right of any custom site cartridge.",
+        tip: "Template overrides for checkout.isml and productDetails.isml are optional — only needed if displaying product prices on the checkout page.",
+      },
+      {
+        id: 4,
+        title: "Set up API credentials (Client ID)",
+        body: "Create a Client ID and password in Account Manager → API Client with the sfcc.customerlists.rw scope. Then configure both Shop API and Data API OCAPI settings with your Client ID, and store the credentials in the Access Token service at Administration → Services → account.manager.generate.token.credentials.",
+        codeBlocks: [
+          {
+            label: "Shop API OCAPI settings (JSON)",
+            value: `{
+  "client_id": "<CLIENT_ID_HERE>",
+  "resources": [
+    {
+      "resource_id": "/order_search",
+      "methods": ["post"],
+      "read_attributes": "(**)",
+      "write_attributes": "(**)"
+    }
+  ]
+}`,
+          },
+          {
+            label: "Data API OCAPI settings (JSON)",
+            value: `{
+  "client_id": "<CLIENT_ID_HERE>",
+  "resources": [
+    {
+      "resource_id": "/sites/*/coupons/*/multiple_codes",
+      "methods": ["post"],
+      "read_attributes": "(**)",
+      "write_attributes": "(**)"
+    }
+  ]
+}`,
+          },
+        ],
+      },
+      {
+        id: 5,
+        title: "Access TrueLoyal settings in SFCC",
+        body: "Log into your SFCC account and navigate to Merchant Tools → Custom Preferences → TrueLoyalConfigs. This is where you'll configure all TrueLoyal settings in the following steps.",
+      },
+      {
+        id: 6,
+        title: "Enable integration and enter credentials",
+        body: "Set 'Enable/Disable TrueLoyal Integration' to Yes. Then enter your Partner ID, API Key, and API Key Identifier — all available from TrueLoyal Admin → Settings → API. Finally, add two custom attributes to your member records: 'Last website visit timestamp' (Date type) and 'External member ID' (String type). Contact your onboarding manager if you need help creating these.",
+        tip: "Your Partner ID and API credentials are in TrueLoyal Admin → Settings → API.",
+      },
+      {
+        id: 7,
+        title: "Configure display and cart settings",
+        body: "In TrueLoyal settings, set 'Show Rewards in Cart Page' to Yes to enable in-cart redemption. Set 'Reward Points Text On Product Pages' to Yes to show point-earning potential on PDPs. Set your 'TrueLoyal Free Shipping Label' text. If your store supports multiple languages, configure language mappings (comma-separated). Finally, set your cart session timeout in minutes — this determines when pending points are rejected for abandoned carts.",
+      },
+      {
+        id: 8,
+        title: "Configure the point-awarding trigger",
+        body: "Choose the order event that triggers points to members: Order Created, Order Placed/Confirmation, Order Shipped, or Order Paid. For Order Created or Confirmation, enable the corresponding toggle in settings. For Shipped or Paid, configure a cron job via Administration → Operations → Jobs, entering the type ID from steptypes.json and selecting the order event. Contact your onboarding manager to confirm which trigger to use before configuring.",
+        tip: "Only one trigger should be active at a time — confirm with your TrueLoyal onboarding manager before setting this up.",
+      },
+      {
+        id: 9,
+        title: "Configure points deduction and partial returns",
+        body: "Set up cron jobs for point deduction on order cancellation, full returns, and partial returns. For partial returns, navigate to Merchant Tools → Ordering → Orders → Attributes → Order Status, select 'partiallyReturned', and enter returned products in JSON format in the 'Returned Items' field.",
+        codeBlocks: [
+          {
+            label: "Partial return JSON format",
+            value: `[
+  { "pid": "013742335262M", "qty": 1 },
+  { "pid": "013742000283M", "qty": 1 }
+]`,
+          },
+        ],
+      },
+      {
+        id: 10,
+        title: "Set up webhook, promotions, and coupons",
+        body: "Obtain your webhook URL from your onboarding manager and enter it in the 'TrueLoyal Webhook URL' field in settings. Then create promotions in Merchant Tools → Online Marketing → Promotions — enable the 'Is TrueLoyal Promotion' toggle on each, set Exclusivity to None, and configure the promotion rule for your reward type (fixed discount, percentage, free shipping, or product). Finally, create matching coupon codes in Merchant Tools → Online Marketing → Coupons, set Case Sensitive to Yes and redemption limit to 1 per coupon, then create a campaign linking the coupons. Update the same coupon codes in TrueLoyal Admin for each reward.",
+        tip: "Ensure 'None' is selected in the Exclusivity setting for every TrueLoyal promotion — other settings will cause conflicts.",
+      },
+      {
+        id: 11,
+        title: "Customise in-cart and PDP text",
+        body: "To customise the loyalty text in the cart, navigate to Merchant Tools → Content → Content Assets and search for 'InCart'. Click the ID, click Lock, edit the Body section, click Apply, then Unlock. Repeat the same process searching for 'PDP' to customise the product page reward text.",
+      },
+    ],
+    whatNext: [
+      {
+        title: "Set up your Activities",
+        body: "Confirm your earning activities are configured in TrueLoyal Admin → Activities. At minimum, 'Made a Purchase' should be active with a points rule configured.",
+        action: { label: "Open Activities", href: "https://app.trueloyal.com" },
+      },
+      {
+        title: "Set up your Rewards",
+        body: "Configure at least one published reward in TrueLoyal Admin → Rewards with coupon codes loaded. Make sure the coupon IDs match what you configured in SFCC.",
+        action: { label: "Open Rewards", href: "https://app.trueloyal.com" },
+      },
+      {
+        title: "Place a test transaction",
+        body: "Place a test order through your SFCC storefront using a registered member account and confirm points are awarded in TrueLoyal Admin → Activity. Test a redemption and verify the coupon code applies correctly at checkout.",
+        action: { label: "Open Activity Log", href: "https://app.trueloyal.com" },
+      },
+      {
+        title: "Schedule a pre-launch review",
+        body: "Before going live, walk through the full member journey with your TrueLoyal onboarding manager — enroll, earn, redeem — and confirm webhooks are firing correctly.",
       },
     ],
   },
